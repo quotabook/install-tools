@@ -1,0 +1,54 @@
+# .github/actions/install-tools/action.yml
+name: 'Install AWS CLI and jq'
+description: 'Install AWS CLI and jq for ARM64'
+runs:
+  using: 'composite'
+  steps:
+    - name: Install AWS CLI for ARM64
+      shell: bash
+      run: |
+        if command -v aws &> /dev/null && aws --version &> /dev/null; then
+          echo "AWS CLI is already installed and working correctly."
+          aws --version
+        else
+          echo "Installing AWS CLI for ARM64 to user directory..."
+          INSTALL_DIR="$HOME/.aws-cli" 
+          BIN_DIR="$HOME/.local/bin" 
+          
+          mkdir -p $INSTALL_DIR
+          mkdir -p $BIN_DIR
+
+          rm -f awscliv2.zip 
+          rm -rf ./aws 
+
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip"
+          unzip -o awscliv2.zip 
+          
+          ./aws/install --install-dir $INSTALL_DIR --bin-dir $BIN_DIR
+          
+          export PATH="$BIN_DIR:$PATH"
+          echo "$BIN_DIR" >> $GITHUB_PATH
+          
+          echo "AWS CLI installed to $BIN_DIR"
+          aws --version
+        fi
+
+    - name: Install jq (user directory)
+      shell: bash
+      run: |
+        if ! command -v jq &> /dev/null; then
+          echo "jq not found, installing to user directory..."
+          JQ_BIN_DIR="$HOME/.local/bin" 
+          mkdir -p $JQ_BIN_DIR
+          
+          JQ_VERSION="1.7.1"
+          curl -L "https://github.com/jqlang/jq/releases/download/jq-${JQ_VERSION}/jq-linux-arm64" -o "$JQ_BIN_DIR/jq"
+          chmod +x "$JQ_BIN_DIR/jq"
+          export PATH="$JQ_BIN_DIR:$PATH"
+          echo "$JQ_BIN_DIR" >> $GITHUB_PATH
+          echo "jq installed to $JQ_BIN_DIR"
+        else
+          echo "jq is already installed."
+        fi
+
+        jq --version
